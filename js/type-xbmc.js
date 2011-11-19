@@ -535,7 +535,12 @@ YUI().use("json","io","transition", "node", "substitute", "history", function(Y)
                 hash += crumbEl.get("text")+"-";
             });
             if(!noUpdate){
-                historyManager.add({url:hash.replace(" ","_"),nodeIndex:nodes.length-1});
+                historyManager.add({
+                    url:hash
+                        .replace(" ","_")
+                        .replace(/-$/,""),
+                    nodeIndex:nodes.length-1
+                });
             }
 
             if(item.list){
