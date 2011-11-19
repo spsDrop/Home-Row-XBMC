@@ -1,4 +1,4 @@
-YUI().use("json","io","transition", "node", "substitute", function(Y){
+YUI().use("json","io","transition", "node", "substitute", "history", function(Y){
     var TypeXBMC = function(el){
         var root = el,
             searchBar = root.one(".search-bar"),
@@ -11,7 +11,10 @@ YUI().use("json","io","transition", "node", "substitute", function(Y){
             statusBar = root.one(".status-bar"),
             media = root.one(".media"),
             status = root.one(".status"),
-            tools = root.one(".tools");
+            tools = root.one(".tools"),
+            breadCrumbs = root.one(".bread-crumbs"),
+            crumbTemplate = breadCrumbs.one(".home").removeClass("home"),
+            historyManager = new Y.HistoryHash();
             
         var baseJSON = {
                 jsonrpc: "2.0",
@@ -303,7 +306,7 @@ YUI().use("json","io","transition", "node", "substitute", function(Y){
             Y.on("resize",resize);
             
             backBox.on("click",function(){
-                back(nodes[nodes.length-2]);
+                history.back();
             });
             
             infoBox.on("click",function(){
@@ -319,6 +322,19 @@ YUI().use("json","io","transition", "node", "substitute", function(Y){
             tools.on("click", clickTool);
             
             form.on("submit",submit);
+
+            historyManager.on("history:change", function(e){
+                if(e.changed.nodeIndex){
+                    var idx = e.changed.nodeIndex.newVal;
+                    if(e.src != Y.HistoryBase.SRC_ADD){
+                        if(nodes[idx]){
+                            back(nodes[idx], true);
+                        }else if(idx != 0){
+                            back(nodes[nodes.length -1]);
+                        }
+                    }
+                }
+            })
             
             open(navTree);
             
@@ -466,7 +482,7 @@ YUI().use("json","io","transition", "node", "substitute", function(Y){
         
         var keyDown = function(e){
             if(input.get("value") === "" && e.keyCode == 8 && nodes.length > 1){
-                back(nodes[nodes.length-2]);
+                history.back();
             }
             if(e.keyCode == 38 || e.keyCode == 40){
                 e.preventDefault();
@@ -497,15 +513,31 @@ YUI().use("json","io","transition", "node", "substitute", function(Y){
             
         };
         
-        var back = function(item){
+        var back = function(item, noUpdate){
             nodes.splice(Y.Array.indexOf(nodes,item),nodes.length);
-            open(item);
+            open(item, noUpdate);
         };
         
-        var open = function(item){
+        var open = function(item, noUpdate){
             bark("Opening: "+(item.title || item.label || item.name));
             nodes.push(item);
             currentNode = item;
+
+            breadCrumbs.empty();
+            var hash = ""
+            Y.Array.each(nodes, function(node){
+                var crumbEl = crumbTemplate.cloneNode(true)
+                    .set("text", node.label || node.name || "none");
+                crumbEl.on("click", function(){
+                   back(node);
+                });
+                breadCrumbs.append(crumbEl);
+                hash += crumbEl.get("text")+"-";
+            });
+            if(!noUpdate){
+                historyManager.add({url:hash.replace(" ","_"),nodeIndex:nodes.length-1});
+            }
+
             if(item.list){
                 bark("Opened: "+(item.title || item.label || item.name));
                 renderItems(item.list);
