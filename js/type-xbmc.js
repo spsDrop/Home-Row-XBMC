@@ -172,9 +172,16 @@ YUI().use("json","io","transition", "node", "substitute", "history", function(Y)
                                     list:null,
                                     inherit:["albumid"],
                                     commands:{
-                                        play:{
-                                            command:"XBMC.Play",
+                                        queueAndPlay:{
+                                            command:"AudioPlaylist.Play",
+                                            params:["songid"]
+                                        },
+                                        queue:{
+                                            command:"AudioPlaylist.Add",
                                             params:["file"]
+                                        },
+                                        clearQueue:{
+                                            command:"AudioPlaylist.Clear"
                                         }
                                     }
                                 }
@@ -206,9 +213,16 @@ YUI().use("json","io","transition", "node", "substitute", "history", function(Y)
                                 list:null,
                                 inherit:["albumid"],
                                 commands:{
-                                    play:{
-                                        command:"XBMC.Play",
+                                    queueAndPlay:{
+                                        command:"AudioPlaylist.Play",
+                                        params:["songid"]
+                                    },
+                                    queue:{
+                                        command:"AudioPlaylist.Add",
                                         params:["file"]
+                                    },
+                                    clearQueue:{
+                                        command:"AudioPlaylist.Clear"
                                     }
                                 }
                             }
@@ -477,6 +491,9 @@ YUI().use("json","io","transition", "node", "substitute", "history", function(Y)
             }else
             if(selectedSubNode.commands.play){
                 play(selectedSubNode);
+            }else
+            if(selectedSubNode.commands.queueAndPlay){
+                queueAndPlay(currentNode.list, selectedSubNode);
             }
         };
         
@@ -592,7 +609,7 @@ YUI().use("json","io","transition", "node", "substitute", "history", function(Y)
         var play = function(item){
             bark("Playing: "+(item.title || item.label || item.name));
             var jsonObj = prepCommand(item.commands.play.command,gatherParams(item, item.commands.play));
-            
+
             Y.io("/jsonrpc",{
                 data:Y.JSON.stringify(jsonObj),
                 method:"POST"
@@ -602,6 +619,65 @@ YUI().use("json","io","transition", "node", "substitute", "history", function(Y)
             input.focus();
             filter("");
         };
+
+        var queueAndPlay = function(nodesToQueue, nodeToPlay){
+            var i=0,
+                playIdx =0,
+                jsonObj;
+
+            var queueNext = function(){
+                var item = nodesToQueue[i];
+                if(item){
+                    playIdx = item == nodeToPlay ? i : playIdx;
+                    item[item.commands.queueAndPlay.params[0]] = i;
+                    queueFile(item, queueNext);
+                    i++;
+                }else{
+                    bark("Playing "+getTitle(nodeToPlay));
+
+                    jsonObj = prepCommand(
+                        nodeToPlay.commands.queueAndPlay.command,
+                        gatherParams(nodeToPlay,nodeToPlay.commands.queueAndPlay)
+                    );
+
+                    jsonObj.params = nodeToPlay[nodeToPlay.commands.queueAndPlay.params[0]]
+
+                    Y.io("/jsonrpc",{
+                        data:Y.JSON.stringify(jsonObj),
+                        method:"POST"
+                    });
+                }
+            };
+
+            if(nodeToPlay.commands.clearQueue){
+                bark("Clearing Queue")
+                jsonObj = prepCommand(nodeToPlay.commands.clearQueue.command);
+
+                Y.io("/jsonrpc",{
+                    data:Y.JSON.stringify(jsonObj),
+                    method:"POST",
+                    on:{success:function(){
+                        queueNext();
+                    }
+                }});
+            }else{
+                queueNext();
+            }
+        };
+
+        var queueFile = function(item, cb){
+            bark("Queueing Item");
+            cb = cb || function(){};
+            var jsonObj = prepCommand(item.commands.queue.command,gatherParams(item, item.commands.queue));
+
+            Y.io("/jsonrpc",{
+                data:Y.JSON.stringify(jsonObj),
+                method:"POST",
+                on:{success:function(){
+                    cb();
+                }
+            }});
+        }
         
         var info = function(){
             
@@ -637,6 +713,10 @@ YUI().use("json","io","transition", "node", "substitute", "history", function(Y)
             
             return jsonObj;
         };
+
+        var getTitle = function(item){
+            return item.title || item.label || item.name;
+        }
         
         var getData = function(command, params, fields, cb){
             cb = cb || function(){};
