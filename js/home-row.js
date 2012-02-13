@@ -33,7 +33,7 @@ YUI().use("json","io","transition", "node", "substitute", "history", function(Y)
                         commands:{
                             open:{
                                 command:"VideoLibrary.GetMovies",
-                                fields:["title","tumbnail","fanart","file"]
+                                properties:["title","tumbnail","fanart","file"]
                             }
                         },
                         list:null,
@@ -55,7 +55,7 @@ YUI().use("json","io","transition", "node", "substitute", "history", function(Y)
                         commands:{
                             open:{
                                 command:"VideoLibrary.GetRecentlyAddedMovies",
-                                fields:["title","tumbnail","fanart","file"]
+                                properties:["title","tumbnail","fanart","file"]
                             }
                         },
                         subItems:{
@@ -75,7 +75,7 @@ YUI().use("json","io","transition", "node", "substitute", "history", function(Y)
                         commands:{
                             open:{
                                 command:"VideoLibrary.GetTVShows",
-                                fields:["title","tumbnail","fanart","tvshowid"]
+                                properties:["title","file","thumbnail"]
                             }
                         },
                         list:null,
@@ -85,7 +85,7 @@ YUI().use("json","io","transition", "node", "substitute", "history", function(Y)
                                 open:{
                                     command:"VideoLibrary.GetSeasons",
                                     params:["tvshowid"],
-                                    fields:["title","tumbnail","fanart","tvshowid","season"]
+                                    properties:["thumbnail","season"]
                                 }
                             },
                             list:null,
@@ -95,18 +95,18 @@ YUI().use("json","io","transition", "node", "substitute", "history", function(Y)
                                     open:{
                                         command:"VideoLibrary.GetEpisodes",
                                         params:["tvshowid","season" ],
-                                        fields:["title","tumbnail","fanart","file","episode"]
+                                        properties:["thumbnail","episode","file","originaltitle"]
                                     }
                                 },
                                 inherit:["tvshowid"],
                                 list:null,
                                 subItems:{
                                     name:"Episode",
-                                    specialName:"{episode}. {title}",
+                                    specialName:"{episode}. {label}",
                                     commands:{
                                         play:{
-                                            command:"XBMC.Play",
-                                            params:["file"]
+                                            command:"Player.Open",
+                                            params:["episodeid"]
                                         }
                                     },
                                     list:null
@@ -121,7 +121,7 @@ YUI().use("json","io","transition", "node", "substitute", "history", function(Y)
                         commands:{
                             open:{
                                 command:"VideoLibrary.GetRecentlyAddedEpisodes",
-                                fields:["title","tumbnail","fanart","file","showtitle","season","episode"]
+                                properties:["title","tumbnail","fanart","file","showtitle","season","episode"]
                             }
                         },
                         subItems:{
@@ -142,7 +142,7 @@ YUI().use("json","io","transition", "node", "substitute", "history", function(Y)
                         commands:{
                             open:{
                                 command:"AudioLibrary.GetArtists",
-                                fields:["title","tumbnail","fanart","artistid"]
+                                properties:["title","tumbnail","fanart","artistid"]
                             }
                         },
                         list:null,
@@ -152,7 +152,7 @@ YUI().use("json","io","transition", "node", "substitute", "history", function(Y)
                                 open:{
                                     command:"AudioLibrary.GetAlbums",
                                     params:["artistid"],
-                                    fields:["title","tumbnail","fanart","albumid"]
+                                    properties:["title","tumbnail","fanart","albumid"]
                                 }
                             },
                             list:null,
@@ -163,7 +163,7 @@ YUI().use("json","io","transition", "node", "substitute", "history", function(Y)
                                     open:{
                                         command:"AudioLibrary.GetSongs",
                                         params:["albumid"],
-                                        fields:["title","tumbnail","fanart","file","albumid"]
+                                        properties:["title","tumbnail","fanart","file","albumid"]
                                     }
                                 },
                                 inherit:["artistid"],
@@ -194,7 +194,7 @@ YUI().use("json","io","transition", "node", "substitute", "history", function(Y)
                         commands:{
                             open:{
                                 command:"AudioLibrary.GetAlbums",
-                                fields:["title","tumbnail","fanart","albumid"]
+                                properties:["title","tumbnail","fanart","albumid"]
                             }
                         },
                         list:null,
@@ -205,7 +205,7 @@ YUI().use("json","io","transition", "node", "substitute", "history", function(Y)
                                 open:{
                                     command:"AudioLibrary.GetSongs",
                                     params:["albumid"],
-                                    fields:["title","tumbnail","fanart","file","albumid"]
+                                    properties:["title","tumbnail","fanart","file","albumid"]
                                 }
                             },
                             subItems:{
@@ -352,7 +352,7 @@ YUI().use("json","io","transition", "node", "substitute", "history", function(Y)
             
             open(navTree);
             
-            checkMedia();
+            //checkMedia();
         };
         
         var clickTool = function(e){
@@ -567,7 +567,7 @@ YUI().use("json","io","transition", "node", "substitute", "history", function(Y)
                 var cmd = item.commands.open,
                     params = gatherParams(item, cmd);
                 
-                getData(cmd.command, params, cmd.fields, function(list){
+                getData(cmd.command, params, cmd.properties, function(list){
                     bark("Opened: "+(item.title || item.label || item.name));
                     item.list = [];
                     Y.Array.each(list, function(subItem,n){
@@ -701,14 +701,14 @@ YUI().use("json","io","transition", "node", "substitute", "history", function(Y)
             return params;
         };
         
-        var prepCommand = function(command, params, fields){
+        var prepCommand = function(command, params, properties){
             var jsonObj = Y.clone(baseJSON);
             
             jsonObj.method = command;
             jsonObj.params = params || {};
             
-            if(fields){
-                jsonObj.params.fields = fields;
+            if(properties){
+                jsonObj.params.properties = properties;
             }
             
             return jsonObj;
@@ -718,10 +718,10 @@ YUI().use("json","io","transition", "node", "substitute", "history", function(Y)
             return item.title || item.label || item.name;
         }
         
-        var getData = function(command, params, fields, cb){
+        var getData = function(command, params, properties, cb){
             cb = cb || function(){};
             
-            var jsonObj = prepCommand(command,params,fields);
+            var jsonObj = prepCommand(command,params,properties);
             
             Y.io("/jsonrpc",{
                 data:Y.JSON.stringify(jsonObj),
