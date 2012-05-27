@@ -14,328 +14,80 @@ YUI().use("json","io","transition", "node", "substitute", "history", function(Y)
             tools = root.one(".tools"),
             breadCrumbs = root.one(".bread-crumbs"),
             crumbTemplate = breadCrumbs.one(".home").removeClass("home"),
+            menuTemplate = root.one(".templates .menu-wrap").cloneNode(true),
+            currentMenu,
             historyManager = new Y.HistoryHash();
-            
+
         var baseJSON = {
                 jsonrpc: "2.0",
                 method: "",
-                params : [],
                 "id": 1,
                 sort: "ascending"
             },
-        
-            navTree = {
-                name:"Home",
-                list:[
-                    {
-                        name:"Movies",
-                        title:"Movies",
-                        commands:{
-                            open:{
-                                command:"VideoLibrary.GetMovies",
-                                properties:["title","tumbnail","fanart","file"]
-                            }
-                        },
-                        list:null,
-                        subItems:{
-                            name:"Movie",
-                            list:null,
-                            commands:{
-                                play:{
-                                    command:"XBMC.Play",
-                                    params:["file"]
-                                }
-                            }
-                        }
-                    },
-                    {
-                        name:"Recent Movies",
-                        title:"Recent Movies",
-                        noSort:true,
-                        commands:{
-                            open:{
-                                command:"VideoLibrary.GetRecentlyAddedMovies",
-                                properties:["title","tumbnail","fanart","file"]
-                            }
-                        },
-                        subItems:{
-                            name:"Movie",
-                            commands:{
-                                play:{
-                                    command:"XBMC.Play",
-                                    params:["file"]
-                                }
-                            },
-                            list:null
-                        }
-                    },
-                    {
-                        name:"Television",
-                        title:"Television",
-                        commands:{
-                            open:{
-                                command:"VideoLibrary.GetTVShows",
-                                properties:["title","file","thumbnail"]
-                            }
-                        },
-                        list:null,
-                        subItems:{
-                            name:"TV Show",
-                            commands:{
-                                open:{
-                                    command:"VideoLibrary.GetSeasons",
-                                    params:["tvshowid"],
-                                    properties:["thumbnail","season"]
-                                }
-                            },
-                            list:null,
-                            subItems:{
-                                name:"Season",
-                                commands:{
-                                    open:{
-                                        command:"VideoLibrary.GetEpisodes",
-                                        params:["tvshowid","season" ],
-                                        properties:["thumbnail","episode","file","originaltitle"]
-                                    }
-                                },
-                                inherit:["tvshowid"],
-                                list:null,
-                                subItems:{
-                                    name:"Episode",
-                                    specialName:"{episode}. {label}",
-                                    commands:{
-                                        play:{
-                                            command:"Player.Open",
-                                            params:["episodeid"]
-                                        }
-                                    },
-                                    list:null
-                                }
-                            }
-                        }
-                    },
-                    {
-                        name:"Recent Episodes",
-                        title:"Recent Episodes",
-                        noSort:true,
-                        commands:{
-                            open:{
-                                command:"VideoLibrary.GetRecentlyAddedEpisodes",
-                                properties:["title","tumbnail","fanart","file","showtitle","season","episode"]
-                            }
-                        },
-                        subItems:{
-                            name:"Episode",
-                            specialName:"{showtitle} - s{season}e{episode} - {title}",
-                            commands:{
-                                play:{
-                                    command:"XBMC.Play",
-                                    params:["file"]
-                                }
-                            },
-                            list:null
-                        }
-                    },
-                    {
-                        name:"Artists",
-                        title:"Artists",
-                        commands:{
-                            open:{
-                                command:"AudioLibrary.GetArtists",
-                                properties:["title","tumbnail","fanart","artistid"]
-                            }
-                        },
-                        list:null,
-                        subItems:{
-                            name:"Artist",
-                            commands:{
-                                open:{
-                                    command:"AudioLibrary.GetAlbums",
-                                    params:["artistid"],
-                                    properties:["title","tumbnail","fanart","albumid"]
-                                }
-                            },
-                            list:null,
-                            subItems:{
-                                name:"Album",   
-                                list:null,
-                                commands:{
-                                    open:{
-                                        command:"AudioLibrary.GetSongs",
-                                        params:["albumid"],
-                                        properties:["title","tumbnail","fanart","file","albumid"]
-                                    }
-                                },
-                                inherit:["artistid"],
-                                subItems:{
-                                    name:"song",
-                                    list:null,
-                                    inherit:["albumid"],
-                                    commands:{
-                                        queueAndPlay:{
-                                            command:"AudioPlaylist.Play",
-                                            params:["songid"]
-                                        },
-                                        queue:{
-                                            command:"AudioPlaylist.Add",
-                                            params:["file"]
-                                        },
-                                        clearQueue:{
-                                            command:"AudioPlaylist.Clear"
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    },
-                    {
-                        name:"Albums",
-                        title:"Albums",
-                        commands:{
-                            open:{
-                                command:"AudioLibrary.GetAlbums",
-                                properties:["title","tumbnail","fanart","albumid"]
-                            }
-                        },
-                        list:null,
-                        subItems:{
-                            name:"Album",   
-                            list:null,
-                            commands:{
-                                open:{
-                                    command:"AudioLibrary.GetSongs",
-                                    params:["albumid"],
-                                    properties:["title","tumbnail","fanart","file","albumid"]
-                                }
-                            },
-                            subItems:{
-                                name:"song",
-                                list:null,
-                                inherit:["albumid"],
-                                commands:{
-                                    queueAndPlay:{
-                                        command:"AudioPlaylist.Play",
-                                        params:["songid"]
-                                    },
-                                    queue:{
-                                        command:"AudioPlaylist.Add",
-                                        params:["file"]
-                                    },
-                                    clearQueue:{
-                                        command:"AudioPlaylist.Clear"
-                                    }
-                                }
-                            }
-                        }
-                    },
-                    {
-                        name:"Video Fliles",
-                        title:"Video Files",
-                        commands:{
-                            open:{
-                                command:"Files.GetSources",
-                                params:[
-                                    {name:"media",fn:function(){return "video";}}
-                                ]
-                            }
-                        },
-                        list:null,
-                        subItems:{
-                            name:"Files",
-                            list:null,
-                            commands:{
-                                getDirectory:{
-                                    command:"Files.GetDirectory",
-                                    params:[
-                                        {name:"directory",fn:function(item){return item.file;}}
-                                    ]
-                                },
-                                play:{
-                                    command:"XBMC.Play",
-                                    params:["file"]
-                                }
-                            },
-                            subItems:{
-                                name:"File",
-                                inherit:["commands","subItems"],
-                                list:null
-                            }
-                        }
-                    },
-                    {
-                        name:"Music Fliles",
-                        title:"Music Files",
-                        commands:{
-                            open:{
-                                command:"Files.GetSources",
-                                params:[
-                                    {name:"media",fn:function(){return "music";}}
-                                ]
-                            }
-                        },
-                        list:null,
-                        subItems:{
-                            name:"Files",
-                            list:null,
-                            commands:{
-                                getDirectory:{
-                                    command:"Files.GetDirectory",
-                                    params:[
-                                        {name:"directory",fn:function(item){return item.file;}}
-                                    ]
-                                },
-                                play:{
-                                    command:"XBMC.Play",
-                                    params:["file"]
-                                }
-                            },
-                            subItems:{
-                                name:"File",
-                                inherit:["commands","subItems"],
-                                list:null
-                            }
-                        }
-                    }
-                ]
+
+            buttonMapping = {
+                "previous":{postfix:".GoPrevious",msg:"Skip Previous"},
+                "skip-back":{postfix:".Seek", params:{value:"bigbackward"},msg:"Skip Back Big"},
+                "skip-back-short":{postfix:".Seek", params:{value:"smallbackward"},msg:"Skip Back Small"},
+                "play-pause":{postfix:".PlayPause",msg:"Play Pause"},
+                "stop":{postfix:".Stop",msg:"Stop"},
+                "skip-forward-short":{postfix:".Seek", params:{value:"smallforward"},msg:"Skip Forward Small"},
+                "skip-forward":{postfix:".Seek", params:{value:"bigforward"},msg:"Skip Forward Big"},
+                "next":{postfix:".GoNext",msg:"Skip Next"}
             },
-            
+
+
             types = {
                 movies:"Movies",
                 tv:"Television",
                 music:"Music",
                 pictures:"Pictures"
             },
-            
+
             defaultValue = input.get("value"),
-            
+
             nodes = [],
             currentNode,
-            selectableSubNodes = [].
-            selectedSubNode;
-            
-            
+            selectableSubNodes = [],
+            selectedSubNode,
+            playerID;
+
+
         
         var init = function(){
             resize();
-            Y.on("resize",resize);
+
+            bindUI();
+
+            input.focus();
             
+            open(navTree);
+            
+            checkMedia();
+        };
+
+        var bindUI = function(){
+
+            Y.on("resize",resize);
+
             backBox.on("click",function(){
                 history.back();
             });
-            
+
             infoBox.on("click",function(){
                 input.focus();
             });
-            
+
+            form.on("submit", function(e){
+                e.preventDefault();
+            });
+
             input.on("blur",blur);
             input.on("focus",focus);
             input.on("keyup", keyHandler);
             input.on("keydown", keyDown);
-            input.focus();
-            
+
             tools.on("click", clickTool);
-            
-            form.on("submit",submit);
 
             historyManager.on("history:change", function(e){
                 if(e.changed.nodeIndex){
@@ -348,54 +100,45 @@ YUI().use("json","io","transition", "node", "substitute", "history", function(Y)
                         }
                     }
                 }
-            })
-            
-            open(navTree);
-            
-            //checkMedia();
+            });
         };
         
         var clickTool = function(e){
-            var buttonClass = e.target.get("className").split(" ")[0];
-            var buttonMapping = {
-                "previous":{postfix:".SkipPrevious",msg:"Skip Previous"},
-                "skip-back":{postfix:".BigSkipBackward",msg:"Skip Back Big"},
-                "skip-back-short":{postfix:".SmallSkipBackward",msg:"Skip Back Small"},
-                "play-pause":{postfix:".PlayPause",msg:"Play Pause"},
-                "stop":{postfix:".Stop",msg:"Stop"},
-                "skip-forward-short":{postfix:".SmallSkipForward",msg:"Skip Forward Small"},
-                "skip-forward":{postfix:".BigSkipForward",msg:"Skip Forward Big"},
-                "next":{postfix:".SkipNext",msg:"Skip Next"}
-            };
-            getSimpleRPC("Player.GetActivePlayers",{},function(rslt){
-                var prefix = "VideoPlayer";
-                prefix = rslt.audio ? "AudioPlayer" : prefix;
-                bark(buttonMapping[buttonClass].msg);
-                getSimpleRPC(prefix+buttonMapping[buttonClass].postfix,{},function(){
-                    bark(buttonMapping[buttonClass].msg+" Complete");
-                });
+            var buttonClass = e.target.get("className").split(" ")[0],
+                mapping = buttonMapping[buttonClass];
+                params = mapping.params || {};
+
+            bark(mapping.msg);
+
+            params.playerid = playerID;
+
+            getSimpleRPC("Player"+mapping.postfix,{params:params},function(){
+                bark(mapping.msg+" Complete");
             });
         };
         
         var checkMedia = function(){
             getSimpleRPC("Player.GetActivePlayers",{},function(results){
-                if(!results.audio && !results.video){
+                if(!results.length){
                     statusBar.hide(1);
                 }else{
+                    playerID = results[0].playerid;
                     statusBar.show(1);
-                    getSimpleRPC("System.GetInfoLabels",{
-                        params:[
-                            "Player.Time",
-                            "Player.Duration",
-                            "Player.FinishTime",
-                            "VideoPlayer.Title",
-                            "VideoPlayer.TVShowTitle",
-                            "MusicPlayer.Title",
-                            "ListItem.Icon",
-                            "VideoPlayer.Cover",
-                            "MusicPlayer.Cover",
-                            "ListItem.Thumb"
-                        ]
+                    getSimpleRPC("XBMC.GetInfoLabels",{
+                        params:{
+                            labels:[
+                                "Player.Time",
+                                "Player.Duration",
+                                "Player.FinishTime",
+                                "VideoPlayer.Title",
+                                "VideoPlayer.TVShowTitle",
+                                "MusicPlayer.Title",
+                                "ListItem.Icon",
+                                "VideoPlayer.Cover",
+                                "MusicPlayer.Cover",
+                                "ListItem.Thumb"
+                            ]
+                        }
                     },function(rslt){
                         var imgURL = rslt["ListItem.Icon"] ||
                                      rslt["ListItem.Thumb"] ||
@@ -477,7 +220,43 @@ YUI().use("json","io","transition", "node", "substitute", "history", function(Y)
         };
         
         var submit = function(e){
+            var doOpenMenu = e.shiftKey ? true : false;
+            doOpenMenu = doOpenMenu || e.type === "contextmenu";
+
             e.preventDefault();
+
+            if(doOpenMenu){
+                openMenu();
+            }else{
+                activateSelected();
+            }
+        };
+
+        var openMenu = function(){
+            if(currentMenu){
+                clearMenu();
+            }
+            currentMenu = new Menu(
+                menuTemplate.cloneNode(true),
+                selectedSubNode,
+                function(command){
+                    if(selectedSubNode.commands[command]){
+                        if(command == 'play'){
+                            play(selectedSubNode);
+                        }
+                    }
+                    clearMenu();
+                }
+            )
+        };
+
+
+        var clearMenu = function(){
+            currentMenu.destroy();
+            currentMenu = null;
+        }
+
+        var activateSelected = function(){
             if(selectedSubNode.commands.getDirectory){
                 if(selectedSubNode.file.match(/[^\/]+$/)){
                     play(selectedSubNode);
@@ -485,36 +264,40 @@ YUI().use("json","io","transition", "node", "substitute", "history", function(Y)
                     selectedSubNode.commands.open = selectedSubNode.commands.getDirectory;
                     open(selectedSubNode);
                 }
-            }else
-            if(selectedSubNode.commands.open){
+            }else if(selectedSubNode.commands.open){
                 open(selectedSubNode);
-            }else
-            if(selectedSubNode.commands.play){
+            }else if(selectedSubNode.commands.play){
                 play(selectedSubNode);
-            }else
-            if(selectedSubNode.commands.queueAndPlay){
+            }else if(selectedSubNode.commands.queueAndPlay){
                 queueAndPlay(currentNode.list, selectedSubNode);
             }
         };
         
         var keyDown = function(e){
-            if(input.get("value") === "" && e.keyCode == 8 && nodes.length > 1){
-                history.back();
-            }
-            if(e.keyCode == 38 || e.keyCode == 40){
-                e.preventDefault();
-                select(
-                    Y.Array.indexOf(selectableSubNodes, selectedSubNode) +
-                    (e.keyCode == 40 ? 1 : -1)
-                );
+            if(!currentMenu){
+                if(input.get("value") === "" && e.keyCode == 8 && nodes.length > 1){
+                    history.back();
+                }
+                if(e.keyCode == 38 || e.keyCode == 40){
+                    e.preventDefault();
+                    select(
+                        Y.Array.indexOf(selectableSubNodes, selectedSubNode) +
+                        (e.keyCode == 40 ? 1 : -1)
+                    );
+                }
             }
         };
         
         var keyHandler = function(e){
-            if((e.keyCode > 45 && e.keyCode < 106) || e.keyCode == 8){
-                filter(input.get("value"));
-            }else{
-                e.preventDefault();
+            if(!currentMenu){
+                if((e.keyCode > 45 && e.keyCode < 106) || e.keyCode == 8){
+                    filter(input.get("value"));
+                }else if(e.keyCode === 13){
+                    submit(e);
+                    e.stopPropagation();
+                }else{
+                    e.preventDefault();
+                }
             }
         };
         
@@ -677,10 +460,6 @@ YUI().use("json","io","transition", "node", "substitute", "history", function(Y)
                     cb();
                 }
             }});
-        }
-        
-        var info = function(){
-            
         };
         
         var gatherParams = function(item, cmd){
@@ -716,7 +495,7 @@ YUI().use("json","io","transition", "node", "substitute", "history", function(Y)
 
         var getTitle = function(item){
             return item.title || item.label || item.name;
-        }
+        };
         
         var getData = function(command, params, properties, cb){
             cb = cb || function(){};
@@ -768,12 +547,15 @@ YUI().use("json","io","transition", "node", "substitute", "history", function(Y)
                 thumb.set("text","No image");
             }
             title.set("text",item.title || item.label || "Unknown");
-            li.on("click",function(e){
-                selectedSubNode = item;
-                submit(e);
-            });
+            li.on("click", selectAndSubmit);
+            li.on("contextmenu", selectAndSubmit);
             item.listEl = li;
             return li;
+
+            function selectAndSubmit(e){
+                selectedSubNode = item;
+                submit(e);
+            }
         };
         
         var barkTimeout;
@@ -788,8 +570,112 @@ YUI().use("json","io","transition", "node", "substitute", "history", function(Y)
         };
         
         var resize = function(){
+
         };
-        
+
+        function Menu(root, selectedItem, cb){
+            var body = Y.one("body"),
+                menuEl = root.one(".menu"),
+                menuList = root.one(".menu-options"),
+                menuItems = [],
+                selected = 0;;
+
+            this.destroy = destroy;
+
+            init();
+
+            function init(){
+                body.append(root);
+                buildMenu();
+                select(selected);
+                bindUI();
+                size();
+            }
+
+            function bindUI(){
+                body.on("keyup", keyHandler);
+                Y.on("resize", size);
+                root.on("click",function(e){
+                    if(e.target = root){
+                        cb(false);
+                    }
+                })
+            }
+
+            function execute(n){
+                cb(menuItems[n].key);
+            }
+
+            function buildMenu(){
+                Y.Object.each(selectedItem.commands, bindMenuItem);
+
+                bindMenuItem(null, "cancel");
+
+                menuEl.one(".thumb").set("src", selectedItem.thumbnail);
+                menuEl.one(".title").set("text", selectedItem.title || selectedItem.label || "");
+            }
+
+            function bindMenuItem(value, key){
+                var option = Y.Node.create('<li>'+key.toUpperCase()+'</li>'),
+                    n = menuItems.length;
+
+                menuList.append(option);
+                menuItems.push(
+                    {
+                        key:key,
+                        el:option
+                    }
+                );
+
+                option.on("click", function(){
+                    execute(n);
+                });
+            }
+
+            function keyHandler(e){
+                if(e.keyCode == 38 || e.keyCode == 40){
+                    e.preventDefault();
+                    e.stopPropagation();
+                    select(e.keyCode == 38 ? -1 : 1);
+                }
+                if(e.keyCode == 13){
+                    e.preventDefault();
+                    e.stopPropagation();
+                    execute(selected);
+                }
+                if(e.keyCode == 27){
+                    e.preventDefault();
+                    e.stopPropagation();
+                    cb(false);
+                }
+            }
+
+            function select(dir){
+                menuItems[selected].el.removeClass("selected");
+                selected += dir;
+                selected = selected < 0 ? menuItems.length - 1 : selected;
+                selected = selected > menuItems.length -1 ? 0 : selected;
+                menuItems[selected].el.addClass("selected");
+            }
+
+            function destroy(){
+                body.detach("keyup", keyHandler);
+                root.remove().destroy();
+                Y.detach("resize", size);
+            }
+
+            function size(){
+                var vpRegion = Y.DOM.viewportRegion(),
+                    menuRegion = menuEl.get("region"),
+                    y = (vpRegion.height - menuRegion.height) / 2;
+
+                y = y < 0 ? 50 : y;
+
+                menuEl.setY(window.scrollY + y);
+                root.setStyle("height", body.get("region").height);
+            }
+        }
+
         init();
     };
     
