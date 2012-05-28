@@ -75,14 +75,41 @@ var navTree = {
                         params:["tvshowid"],
                         properties:["thumbnail","season"]
                     },
-                    play:{
-                        command:"Player.Open",
-                        params:[{
-                            name:"item",
-                            fn:function(item){
-                                return { tvshowid: item.tvshowid }
+                    queueAndPlay:{title:"Queue And Play"},
+                    queue:true,
+                    batchGatherCommand:{
+                        hideMenu:true,
+                        command:"VideoLibrary.GetEpisodes",
+                        params:[
+                            "tvshowid",
+                            {
+                                name:"sort",
+                                value:{
+                                    order:"ascending",
+                                    method:"episode"
+                                }
                             }
-                        }]
+                        ],
+                        properties:["episode","season"],
+                        results:function(res){
+                            return res.result.episodes;
+                        }
+                    },
+                    batchCommand:{
+                        hideMenu:true,
+                        command:"Playlist.Add",
+                        params:[
+                            {
+                                name:"playlistid",
+                                value:1
+                            },
+                            {
+                                name:"item",
+                                fn:function(item){
+                                    return {episodeid: item.episodeid};
+                                }
+                            }
+                        ]
                     }
                 },
                 list:null,
@@ -93,6 +120,32 @@ var navTree = {
                             command:"VideoLibrary.GetEpisodes",
                             params:["tvshowid","season" ],
                             properties:["thumbnail","episode","file","originaltitle"]
+                        },
+                        queueAndPlay:{title:"Queue And Play"},
+                        queue:true,
+                        batchGatherCommand:{
+                            hideMenu:true,
+                            command:"VideoLibrary.GetEpisodes",
+                            params:[ "tvshowid", "season" ],
+                            results:function(res){
+                                return res.result.episodes;
+                            }
+                        },
+                        batchCommand:{
+                            hideMenu:true,
+                            command:"Playlist.Add",
+                            params:[
+                                {
+                                    name:"playlistid",
+                                    value:1
+                                },
+                                {
+                                    name:"item",
+                                    fn:function(item){
+                                        return {episodeid: item.episodeid};
+                                    }
+                                }
+                            ]
                         }
                     },
                     inherit:["tvshowid"],
@@ -108,6 +161,23 @@ var navTree = {
                                         name:"item",
                                         fn:function(item){
                                             return { episodeid: item.episodeid };
+                                        }
+                                    }
+                                ]
+                            },
+                            queue:true,
+                            batchCommand:{
+                                hideMenu:true,
+                                command:"Playlist.Add",
+                                params:[
+                                    {
+                                        name:"playlistid",
+                                        value:1
+                                    },
+                                    {
+                                        name:"item",
+                                        fn:function(item){
+                                            return {episodeid: item.episodeid};
                                         }
                                     }
                                 ]
@@ -139,6 +209,23 @@ var navTree = {
                                 name:"item",
                                 fn:function(item){
                                     return { episodeid: item.episodeid };
+                                }
+                            }
+                        ]
+                    },
+                    queue:true,
+                    batchCommand:{
+                        hideMenu:true,
+                        command:"Playlist.Add",
+                        params:[
+                            {
+                                name:"playlistid",
+                                value:1
+                            },
+                            {
+                                name:"item",
+                                fn:function(item){
+                                    return {episodeid: item.episodeid};
                                 }
                             }
                         ]

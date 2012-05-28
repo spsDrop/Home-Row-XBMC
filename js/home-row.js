@@ -1,4 +1,4 @@
-YUI().use("json","io","transition", "node", "substitute", "history", function(Y){
+YUI().use("json","io","transition", "node", "substitute", "history", "array-extras", function(Y){
     var TypeXBMC = function(el){
         var root = el,
             searchBar = root.one(".search-bar"),
@@ -168,15 +168,48 @@ YUI().use("json","io","transition", "node", "substitute", "history", function(Y)
         };
         
         var getSimpleRPC = function(method, obj, cb){
-            cb = cb || function(){};
             var jsonObj = Y.clone(baseJSON);
+
+            cb = cb || function(){};
+
             Y.aggregate(jsonObj, obj, true);
             jsonObj.method = method;
+
             Y.io("/jsonrpc",{
                 method:"POST",
                 data:Y.JSON.stringify(jsonObj),
                 on:{success:function(id,res){
-                    cb(Y.JSON.parse(res.responseText).result);
+                    cb(
+                        Y.JSON.parse(
+                            res.responseText
+                        ).result
+                    );
+                }}
+            });
+        };
+
+        var getLayeredRPCCall = function(item, command, cb){
+            var data;
+            item = item || {};
+            cb = cb || function(){};
+
+            data = prepCommand(
+                command.command,
+                gatherParams(
+                    item,
+                    command
+                )
+            );
+
+            Y.io("/jsonrpc",{
+                data:Y.JSON.stringify(data),
+                method:"POST",
+                on:{success:function(id, res){
+                    cb(
+                        Y.JSON.parse(
+                            res.responseText
+                        )
+                    );
                 }}
             });
         };
@@ -244,6 +277,12 @@ YUI().use("json","io","transition", "node", "substitute", "history", function(Y)
                         if(command == 'play'){
                             play(selectedSubNode);
                         }
+                        if(command == 'queueAndPlay'){
+                            queueAndPlay(selectedSubNode, true);
+                        }
+                        if(command == 'queue'){
+                            queueAndPlay(selectedSubNode);
+                        }
                     }
                     clearMenu();
                 }
@@ -268,8 +307,8 @@ YUI().use("json","io","transition", "node", "substitute", "history", function(Y)
                 open(selectedSubNode);
             }else if(selectedSubNode.commands.play){
                 play(selectedSubNode);
-            }else if(selectedSubNode.commands.queueAndPlay){
-                queueAndPlay(currentNode.list, selectedSubNode);
+            }else if(selectedSubNode.commands.queueAndPlay && selectedSubNode.commands.queue){
+                queueAndPlay(selectedSubNode);
             }
         };
         
@@ -391,60 +430,54 @@ YUI().use("json","io","transition", "node", "substitute", "history", function(Y)
         
         var play = function(item){
             bark("Playing: "+(item.title || item.label || item.name));
-            var jsonObj = prepCommand(item.commands.play.command,gatherParams(item, item.commands.play));
 
-            Y.io("/jsonrpc",{
-                data:Y.JSON.stringify(jsonObj),
-                method:"POST"
-            });
+            getLayeredRPCCall(item, item.commands.play);
             
             input.set("value","");
             input.focus();
             filter("");
         };
 
-        var queueAndPlay = function(nodesToQueue, nodeToPlay){
-            var i=0,
-                playIdx =0,
-                jsonObj;
+        var queueAndPlay = function(node, play){
 
-            var queueNext = function(){
-                var item = nodesToQueue[i];
-                if(item){
-                    playIdx = item == nodeToPlay ? i : playIdx;
-                    item[item.commands.queueAndPlay.params[0]] = i;
-                    queueFile(item, queueNext);
-                    i++;
+            if(node.commands.batchGatherCommand){
+                if(play){
+                    getSimpleRPC("Playlist.Clear", {params:{playlistid:1}}, batchGather);
                 }else{
-                    bark("Playing "+getTitle(nodeToPlay));
-
-                    jsonObj = prepCommand(
-                        nodeToPlay.commands.queueAndPlay.command,
-                        gatherParams(nodeToPlay,nodeToPlay.commands.queueAndPlay)
-                    );
-
-                    jsonObj.params = nodeToPlay[nodeToPlay.commands.queueAndPlay.params[0]]
-
-                    Y.io("/jsonrpc",{
-                        data:Y.JSON.stringify(jsonObj),
-                        method:"POST"
-                    });
+                    batchGather();
                 }
-            };
+            }else{
+                runBatchCall([node])
+            }
 
-            if(nodeToPlay.commands.clearQueue){
-                bark("Clearing Queue")
-                jsonObj = prepCommand(nodeToPlay.commands.clearQueue.command);
+            function batchGather(){
+                getLayeredRPCCall(node, node.commands.batchGatherCommand, function(json){
+                    runBatchCall(
+                        node.commands.batchGatherCommand.results(json)
+                    );
+                });
+            }
+
+            function runBatchCall(list){
+                var data = data = Y.Array.map(list, function(item){
+                    return prepCommand(
+                        node.commands.batchCommand.command,
+                        gatherParams(
+                            item,
+                            node.commands.batchCommand
+                        )
+                    );
+                });
 
                 Y.io("/jsonrpc",{
-                    data:Y.JSON.stringify(jsonObj),
+                    data:Y.JSON.stringify(data),
                     method:"POST",
-                    on:{success:function(){
-                        queueNext();
-                    }
-                }});
-            }else{
-                queueNext();
+                    on:{success:function(id, res){
+                        if(play){
+                            getSimpleRPC("Player.Open", {params:{item:{playlistid:1}}});
+                        }
+                    }}
+                });
             }
         };
 
@@ -464,6 +497,12 @@ YUI().use("json","io","transition", "node", "substitute", "history", function(Y)
         
         var gatherParams = function(item, cmd){
             var params = {};
+
+
+            if(cmd.properties){
+                params.properties = cmd.properties;
+            }
+
             if(cmd.params){
                 Y.Array.each(cmd.params, function(param){
                     if(Y.Lang.isString(param)){
@@ -473,10 +512,11 @@ YUI().use("json","io","transition", "node", "substitute", "history", function(Y)
                             Y.log("Param not found on item: "+param);
                         }
                     }else{
-                        params[param.name] = param.fn(item);
+                        params[param.name] =  param.fn ? param.fn(item) : param.value;
                     }
                 });
             }
+
             return params;
         };
         
@@ -609,27 +649,29 @@ YUI().use("json","io","transition", "node", "substitute", "history", function(Y)
             function buildMenu(){
                 Y.Object.each(selectedItem.commands, bindMenuItem);
 
-                bindMenuItem(null, "cancel");
+                bindMenuItem({}, "cancel");
 
                 menuEl.one(".thumb").set("src", selectedItem.thumbnail);
                 menuEl.one(".title").set("text", selectedItem.title || selectedItem.label || "");
             }
 
             function bindMenuItem(value, key){
-                var option = Y.Node.create('<li>'+key.toUpperCase()+'</li>'),
-                    n = menuItems.length;
+                if(value && !value.hideMenu){
+                    var option = Y.Node.create('<li>'+key.toUpperCase()+'</li>'),
+                        n = menuItems.length;
 
-                menuList.append(option);
-                menuItems.push(
-                    {
-                        key:key,
-                        el:option
-                    }
-                );
+                    menuList.append(option);
+                    menuItems.push(
+                        {
+                            key:key,
+                            el:option
+                        }
+                    );
 
-                option.on("click", function(){
-                    execute(n);
-                });
+                    option.on("click", function(){
+                        execute(n);
+                    });
+                }
             }
 
             function keyHandler(e){
