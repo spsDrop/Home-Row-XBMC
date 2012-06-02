@@ -2,9 +2,9 @@
 <html>
 <head>
     <title>Home Row XBMC</title>
-    <meta name="viewport" content="initial-scale = 1.0, width = 640px"/>
+    <meta name="viewport" content="initial-scale = .55, width = device-width, minimum-scale = .55, maximum-scale = 1.5 "/>
     <link rel="shortcut icon" href="/favicon.ico">
-    <link rel="stylesheet" href="css/type-xbmc.css">
+    <link rel="stylesheet" href="css/home-row.css">
     <link rel="stylesheet" href="css/yui.css">
     <script type="text/javascript" src="js/yui.js"></script>
     <script type="text/javascript" src="js/menu-structure.js"></script>
@@ -25,7 +25,23 @@
                 </form>
             </li>
             <li class="help button">
-                ? <span class="info-box">Start typing to refine results. Hit enter to open item. You can use up  and down arrows to help select. Hit backspace to go back.</span>
+                ? <div class="info-box">
+                    <h3>General Info</h3>
+                    <ul>
+                        <li>
+                            <p>
+                                Start typing to refine results. Hit enter to open item. You can use up and down arrows to help select. Hit backspace to go back.
+                            </p>
+                        </li>
+                    </ul>
+                    <h3>Hot Keys</h3>
+                    <ul>
+                        <li>shift+Enter/right click - Default Item Option</li>
+                        <li>ctrl+shift+Q - Queue and Play</li>
+                        <li>ctrl+Q - Queue</li>
+                        <li>ctrl+shift+C - Clean Video Library</li>
+                    </ul>
+                </div>
             </li>
         </ul>
         <div class="results-box">
@@ -71,7 +87,7 @@
         <div class="templates">
             <li class="item">
                 <p class="thumb">
-                        <img class="tumb-img">
+                        <img class="thumb-img">
                 </p>
                 <p class="title">
                 </p>
@@ -80,9 +96,11 @@
                 <div class="menu">
                     <h2 class="title"></h2>
                     <div class="menu-info-wrapper">
-                        <img class="thumb">
-                        <p class="description"></p>
                         <ul class="menu-options"></ul>
+                        <p>
+                            <img class="thumb"/>
+                        </p>
+                        <p class="description clear"></p>
                     </div>
                 </div>
             </div>

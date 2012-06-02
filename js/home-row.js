@@ -1,4 +1,4 @@
-YUI().use("json","io","transition", "node", "substitute", "history", function(Y){
+YUI().use("json","io","transition", "node", "substitute", "history", "array-extras", "HomeRowMenus", function(Y){
     var TypeXBMC = function(el){
         var root = el,
             searchBar = root.one(".search-bar"),
@@ -59,9 +59,9 @@ YUI().use("json","io","transition", "node", "substitute", "history", function(Y)
 
             bindUI();
 
-            input.focus();
+            requestFocus();
             
-            open(navTree);
+            open(Y.homeRowMenus);
             
             checkMedia();
         };
@@ -75,7 +75,7 @@ YUI().use("json","io","transition", "node", "substitute", "history", function(Y)
             });
 
             infoBox.on("click",function(){
-                input.focus();
+                requestFocus();
             });
 
             form.on("submit", function(e){
@@ -101,6 +101,12 @@ YUI().use("json","io","transition", "node", "substitute", "history", function(Y)
                     }
                 }
             });
+        };
+
+        var requestFocus = function(){
+            if(!Y.UA.mobile){
+                input.focus();
+            }
         };
         
         var clickTool = function(e){
@@ -149,7 +155,7 @@ YUI().use("json","io","transition", "node", "substitute", "history", function(Y)
                                  
                         if(imgURL){
                             icon.show(1);
-                            icon.one("img").set("src",imgURL);
+                            icon.one("img").set("src",imgURL || null);
                         }else{
                             icon.hide(1);
                         }
@@ -168,15 +174,48 @@ YUI().use("json","io","transition", "node", "substitute", "history", function(Y)
         };
         
         var getSimpleRPC = function(method, obj, cb){
-            cb = cb || function(){};
             var jsonObj = Y.clone(baseJSON);
+
+            cb = cb || function(){};
+
             Y.aggregate(jsonObj, obj, true);
             jsonObj.method = method;
+
             Y.io("/jsonrpc",{
                 method:"POST",
                 data:Y.JSON.stringify(jsonObj),
                 on:{success:function(id,res){
-                    cb(Y.JSON.parse(res.responseText).result);
+                    cb(
+                        Y.JSON.parse(
+                            res.responseText
+                        ).result
+                    );
+                }}
+            });
+        };
+
+        var getLayeredRPCCall = function(item, command, cb){
+            var data;
+            item = item || {};
+            cb = cb || function(){};
+
+            data = prepCommand(
+                command.command,
+                gatherParams(
+                    item,
+                    command
+                )
+            );
+
+            Y.io("/jsonrpc",{
+                data:Y.JSON.stringify(data),
+                method:"POST",
+                on:{success:function(id, res){
+                    cb(
+                        Y.JSON.parse(
+                            res.responseText
+                        )
+                    );
                 }}
             });
         };
@@ -220,8 +259,9 @@ YUI().use("json","io","transition", "node", "substitute", "history", function(Y)
         };
         
         var submit = function(e){
-            var doOpenMenu = e.shiftKey ? true : false;
-            doOpenMenu = doOpenMenu || e.type === "contextmenu";
+            var doOpenMenu = Y.Object.size(selectedSubNode.commands) > 1;
+            doOpenMenu = doOpenMenu ? !e.shiftKey : doOpenMenu;
+            doOpenMenu = doOpenMenu ? !(e.type === "contextmenu") : doOpenMenu;
 
             e.preventDefault();
 
@@ -239,40 +279,66 @@ YUI().use("json","io","transition", "node", "substitute", "history", function(Y)
             currentMenu = new Menu(
                 menuTemplate.cloneNode(true),
                 selectedSubNode,
-                function(command){
-                    if(selectedSubNode.commands[command]){
-                        if(command == 'play'){
-                            play(selectedSubNode);
-                        }
-                    }
-                    clearMenu();
-                }
+                activateSelected
             )
         };
 
-
         var clearMenu = function(){
-            currentMenu.destroy();
+            currentMenu && currentMenu.destroy();
             currentMenu = null;
-        }
+        };
 
-        var activateSelected = function(){
-            if(selectedSubNode.commands.getDirectory){
-                if(selectedSubNode.file.match(/[^\/]+$/)){
-                    play(selectedSubNode);
-                }else{
-                    selectedSubNode.commands.open = selectedSubNode.commands.getDirectory;
-                    open(selectedSubNode);
+        var activateSelected = function(command){
+            clearMenu();
+
+            if(command == 'cancel'){
+                return false;
+            }
+
+            if(selectedSubNode.commands[command]){
+                switch(command){
+                    case 'open':
+                        open(selectedSubNode);
+                        break;
+                    case 'play':
+                        play(selectedSubNode);
+                        break;
+                    case 'queueAndPlay':
+                        queueAndPlay(selectedSubNode, true);
+                        break;
+                    case 'queue':
+                        queueAndPlay(selectedSubNode);
+                        break;
+                    case 'remove' || 'clear':
+                        updateRefresh(selectedSubNode, selectedSubNode.commands[command]);
+                        break;
+                    default:
+                        runDefault();
                 }
-            }else if(selectedSubNode.commands.open){
-                open(selectedSubNode);
-            }else if(selectedSubNode.commands.play){
-                play(selectedSubNode);
-            }else if(selectedSubNode.commands.queueAndPlay){
-                queueAndPlay(currentNode.list, selectedSubNode);
+            }else{
+                runDefault();
+            }
+
+            function runDefault(){
+                if(selectedSubNode.commands.getDirectory){
+                    if(selectedSubNode.file.match(/[^\/]+$/)){
+                        play(selectedSubNode);
+                    }else{
+                        selectedSubNode.commands.open = selectedSubNode.commands.getDirectory;
+                        open(selectedSubNode);
+                    }
+                }else if(selectedSubNode.commands.open){
+                    open(selectedSubNode);
+                }else if(selectedSubNode.commands.play){
+                    play(selectedSubNode);
+                }else if(selectedSubNode.commands.queueAndPlay){
+                    queueAndPlay(selectedSubNode, true);
+                }else if(selectedSubNode.commands.queue){
+                    queueAndPlay(selectedSubNode);
+                }
             }
         };
-        
+
         var keyDown = function(e){
             if(!currentMenu){
                 if(input.get("value") === "" && e.keyCode == 8 && nodes.length > 1){
@@ -290,7 +356,23 @@ YUI().use("json","io","transition", "node", "substitute", "history", function(Y)
         
         var keyHandler = function(e){
             if(!currentMenu){
-                if((e.keyCode > 45 && e.keyCode < 106) || e.keyCode == 8){
+                if( e.keyCode == 85 && e.shiftKey && e.ctrlKey ){
+                    getSimpleRPC("VideoLibrary.Scan",{});
+                }else if( e.keyCode == 67 && e.shiftKey && e.ctrlKey ){
+                    getSimpleRPC("VideoLibrary.Clean",{});
+                }else if(
+                    e.keyCode == 81 &&
+                    e.ctrlKey &&
+                    selectedSubNode &&
+                    (selectedSubNode.commands.queueAndPlay ||
+                    selectedSubNode.commands.queue)
+                ){
+                    if( e.shiftKey ){
+                        queueAndPlay(selectedSubNode, true);
+                    }else{
+                        queueAndPlay(selectedSubNode);
+                    }
+                }else if((e.keyCode > 45 && e.keyCode < 106) || e.keyCode == 8){
                     filter(input.get("value"));
                 }else if(e.keyCode === 13){
                     submit(e);
@@ -317,6 +399,12 @@ YUI().use("json","io","transition", "node", "substitute", "history", function(Y)
             nodes.splice(Y.Array.indexOf(nodes,item),nodes.length);
             open(item, noUpdate);
         };
+
+        var updateRefresh = function(item, command){
+            getLayeredRPCCall(item, command, function(){
+                back(currentNode);
+            });
+        };
         
         var open = function(item, noUpdate){
             bark("Opening: "+(item.title || item.label || item.name));
@@ -324,7 +412,7 @@ YUI().use("json","io","transition", "node", "substitute", "history", function(Y)
             currentNode = item;
 
             breadCrumbs.empty();
-            var hash = ""
+            var hash = "";
             Y.Array.each(nodes, function(node){
                 var crumbEl = crumbTemplate.cloneNode(true)
                     .set("text", node.label || node.name || "none");
@@ -334,6 +422,9 @@ YUI().use("json","io","transition", "node", "substitute", "history", function(Y)
                 breadCrumbs.append(crumbEl);
                 hash += crumbEl.get("text")+"-";
             });
+
+            results.set("className", item.name.replace(" ","-").toLocaleLowerCase()+" results");
+
             if(!noUpdate){
                 historyManager.add({
                     url:hash
@@ -343,7 +434,7 @@ YUI().use("json","io","transition", "node", "substitute", "history", function(Y)
                 });
             }
 
-            if(item.list){
+            if(item.loaded && !item.alwaysRefreshList){
                 bark("Opened: "+(item.title || item.label || item.name));
                 renderItems(item.list);
             }else{
@@ -352,11 +443,16 @@ YUI().use("json","io","transition", "node", "substitute", "history", function(Y)
                 
                 getData(cmd.command, params, cmd.properties, function(list){
                     bark("Opened: "+(item.title || item.label || item.name));
-                    item.list = [];
-                    Y.Array.each(list, function(subItem,n){
-                        item.list.push(
-                            Y.aggregate(subItem, item.subItems)
-                        );
+
+                    item.list = item.alwaysRefreshList ? [] : (item.list || []);
+
+                    item.list = item.list.concat(list || []);
+
+                    item.loaded = true;
+
+                    Y.Array.each(item.list, function(subItem,n){
+                        subItem.idx = n;
+                        Y.aggregate(subItem, item.subItems);
                         if(subItem.inherit){
                             Y.Array.each(subItem.inherit, function(param){
                                 if(Y.Lang.isString){
@@ -391,60 +487,54 @@ YUI().use("json","io","transition", "node", "substitute", "history", function(Y)
         
         var play = function(item){
             bark("Playing: "+(item.title || item.label || item.name));
-            var jsonObj = prepCommand(item.commands.play.command,gatherParams(item, item.commands.play));
 
-            Y.io("/jsonrpc",{
-                data:Y.JSON.stringify(jsonObj),
-                method:"POST"
-            });
+            getLayeredRPCCall(item, item.commands.play);
             
             input.set("value","");
-            input.focus();
+            requestFocus();
             filter("");
         };
 
-        var queueAndPlay = function(nodesToQueue, nodeToPlay){
-            var i=0,
-                playIdx =0,
-                jsonObj;
+        var queueAndPlay = function(node, play){
 
-            var queueNext = function(){
-                var item = nodesToQueue[i];
-                if(item){
-                    playIdx = item == nodeToPlay ? i : playIdx;
-                    item[item.commands.queueAndPlay.params[0]] = i;
-                    queueFile(item, queueNext);
-                    i++;
+            if(node.commands.batchGatherCommand){
+                if(play){
+                    getSimpleRPC("Playlist.Clear", {params:{playlistid:1}}, batchGather);
                 }else{
-                    bark("Playing "+getTitle(nodeToPlay));
-
-                    jsonObj = prepCommand(
-                        nodeToPlay.commands.queueAndPlay.command,
-                        gatherParams(nodeToPlay,nodeToPlay.commands.queueAndPlay)
-                    );
-
-                    jsonObj.params = nodeToPlay[nodeToPlay.commands.queueAndPlay.params[0]]
-
-                    Y.io("/jsonrpc",{
-                        data:Y.JSON.stringify(jsonObj),
-                        method:"POST"
-                    });
+                    batchGather();
                 }
-            };
+            }else{
+                runBatchCall([node])
+            }
 
-            if(nodeToPlay.commands.clearQueue){
-                bark("Clearing Queue")
-                jsonObj = prepCommand(nodeToPlay.commands.clearQueue.command);
+            function batchGather(){
+                getLayeredRPCCall(node, node.commands.batchGatherCommand, function(json){
+                    runBatchCall(
+                        node.commands.batchGatherCommand.results(json)
+                    );
+                });
+            }
+
+            function runBatchCall(list){
+                var data = data = Y.Array.map(list, function(item){
+                    return prepCommand(
+                        node.commands.batchCommand.command,
+                        gatherParams(
+                            item,
+                            node.commands.batchCommand
+                        )
+                    );
+                });
 
                 Y.io("/jsonrpc",{
-                    data:Y.JSON.stringify(jsonObj),
+                    data:Y.JSON.stringify(data),
                     method:"POST",
-                    on:{success:function(){
-                        queueNext();
-                    }
-                }});
-            }else{
-                queueNext();
+                    on:{success:function(id, res){
+                        if(play){
+                            getSimpleRPC("Player.Open", {params:{item:{playlistid:1}}});
+                        }
+                    }}
+                });
             }
         };
 
@@ -464,6 +554,12 @@ YUI().use("json","io","transition", "node", "substitute", "history", function(Y)
         
         var gatherParams = function(item, cmd){
             var params = {};
+
+
+            if(cmd.properties){
+                params.properties = cmd.properties;
+            }
+
             if(cmd.params){
                 Y.Array.each(cmd.params, function(param){
                     if(Y.Lang.isString(param)){
@@ -473,10 +569,11 @@ YUI().use("json","io","transition", "node", "substitute", "history", function(Y)
                             Y.log("Param not found on item: "+param);
                         }
                     }else{
-                        params[param.name] = param.fn(item);
+                        params[param.name] =  param.fn ? param.fn(item) : param.value;
                     }
                 });
             }
+
             return params;
         };
         
@@ -495,6 +592,10 @@ YUI().use("json","io","transition", "node", "substitute", "history", function(Y)
 
         var getTitle = function(item){
             return item.title || item.label || item.name;
+        };
+
+        var getDescription = function(item){
+            return item.plot || item.description || "";
         };
         
         var getData = function(command, params, properties, cb){
@@ -515,7 +616,7 @@ YUI().use("json","io","transition", "node", "substitute", "history", function(Y)
                     });
                     Y.Array.each(newList,function(newItem){
                         Y.each(newItem,function(value,param){
-                            if(value.match && value.match("special://")){
+                            if(Y.Lang.isString(value) && value.match("special://")){
                                 newItem[param] = "/vfs/"+value;
                             }
                         });
@@ -531,7 +632,7 @@ YUI().use("json","io","transition", "node", "substitute", "history", function(Y)
                 results.append(renderItem(item));
             });
             input.set("value","");
-            input.focus();
+            requestFocus();
             filter("");
         };
         
@@ -540,8 +641,9 @@ YUI().use("json","io","transition", "node", "substitute", "history", function(Y)
                 thumb = li.one(".thumb"),
                 img = li.one(".thumb img"),
                 title = li.one(".title");
+            li.addClass(item.name.toLocaleLowerCase());
             if(item.thumbnail){
-                img.set("src",item.thumbnail);
+                img.set("src",item.thumbnail || null);
             }else{
                 thumb.addClass("no-image");
                 thumb.set("text","No image");
@@ -578,7 +680,7 @@ YUI().use("json","io","transition", "node", "substitute", "history", function(Y)
                 menuEl = root.one(".menu"),
                 menuList = root.one(".menu-options"),
                 menuItems = [],
-                selected = 0;;
+                selected = 0;
 
             this.destroy = destroy;
 
@@ -597,7 +699,7 @@ YUI().use("json","io","transition", "node", "substitute", "history", function(Y)
                 Y.on("resize", size);
                 root.on("click",function(e){
                     if(e.target = root){
-                        cb(false);
+                        cb('cancel');
                     }
                 })
             }
@@ -609,27 +711,31 @@ YUI().use("json","io","transition", "node", "substitute", "history", function(Y)
             function buildMenu(){
                 Y.Object.each(selectedItem.commands, bindMenuItem);
 
-                bindMenuItem(null, "cancel");
+                bindMenuItem({}, "cancel");
 
-                menuEl.one(".thumb").set("src", selectedItem.thumbnail);
-                menuEl.one(".title").set("text", selectedItem.title || selectedItem.label || "");
+                menuEl.one(".thumb").set("src", selectedItem.thumbnail || null);
+                menuEl.one(".title").set("text", getTitle(selectedItem));
+                menuEl.one(".description").set("text", getDescription(selectedItem));
             }
 
             function bindMenuItem(value, key){
-                var option = Y.Node.create('<li>'+key.toUpperCase()+'</li>'),
-                    n = menuItems.length;
+                if(value && !value.hideMenu){
+                    var name = value.title || key,
+                        option = Y.Node.create('<li>'+name.toUpperCase()+'</li>'),
+                        n = menuItems.length;
 
-                menuList.append(option);
-                menuItems.push(
-                    {
-                        key:key,
-                        el:option
-                    }
-                );
+                    menuList.append(option);
+                    menuItems.push(
+                        {
+                            key:key,
+                            el:option
+                        }
+                    );
 
-                option.on("click", function(){
-                    execute(n);
-                });
+                    option.on("click", function(){
+                        execute(n);
+                    });
+                }
             }
 
             function keyHandler(e){
@@ -672,7 +778,7 @@ YUI().use("json","io","transition", "node", "substitute", "history", function(Y)
                 y = y < 0 ? 50 : y;
 
                 menuEl.setY(window.scrollY + y);
-                root.setStyle("height", body.get("region").height);
+                root.setStyle("height", body.get("region").height < vpRegion.height ? vpRegion.height : body.get("region").height);
             }
         }
 
