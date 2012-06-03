@@ -35,6 +35,71 @@ YUI.add("HomeRowMenus", function(Y){
         list:null
     };
 
+    var Album = {
+        name:"Album",
+        noSort:true,
+        list:null,
+        commands:{
+            open:{
+                command:"AudioLibrary.GetSongs",
+                properties:["thumbnail","fanart"],
+                params:[
+                    "albumid",
+                    {
+                        name:"sort",
+                        value:{
+                            order:"ascending",
+                            method:"track"
+                        }
+                    }
+                ]
+            }
+        },
+        subItems:{
+            name:"song",
+            list:null,
+            inherit:["albumid"],
+            commands:{
+                queueAndPlay:{title:"Queue And Play"},
+                queue:true,
+                batchGatherCommand:{
+                    hideMenu:true,
+                    command:"VideoLibrary.GetEpisodes",
+                    params:[
+                        "tvshowid",
+                        {
+                            name:"sort",
+                            value:{
+                                order:"ascending",
+                                method:"episode"
+                            }
+                        }
+                    ],
+                    properties:["episode","season"],
+                    results:function(res){
+                        return res.result.episodes;
+                    }
+                },
+                batchCommand:{
+                    hideMenu:true,
+                    command:"Playlist.Add",
+                    params:[
+                        {
+                            name:"playlistid",
+                            value:1
+                        },
+                        {
+                            name:"item",
+                            fn:function(item){
+                                return {episodeid: item.episodeid};
+                            }
+                        }
+                    ]
+                }
+            }
+        }
+    };
+
     Y.homeRowMenus = {
         name:"Home",
         loaded: true,
@@ -332,36 +397,7 @@ YUI.add("HomeRowMenus", function(Y){
                         }
                     },
                     list:null,
-                    subItems:{
-                        name:"Album",
-                        list:null,
-                        commands:{
-                            open:{
-                                command:"AudioLibrary.GetSongs",
-                                params:["albumid"],
-                                properties:["title","thumbnail","fanart","file","albumid"]
-                            }
-                        },
-                        inherit:["artistid"],
-                        subItems:{
-                            name:"song",
-                            list:null,
-                            inherit:["albumid"],
-                            commands:{
-                                queueAndPlay:{
-                                    command:"AudioPlaylist.Play",
-                                    params:["songid"]
-                                },
-                                queue:{
-                                    command:"AudioPlaylist.Add",
-                                    params:["file"]
-                                },
-                                clearQueue:{
-                                    command:"AudioPlaylist.Clear"
-                                }
-                            }
-                        }
-                    }
+                    subItems:Y.clone(Album)
                 }
             },
             {
@@ -370,39 +406,11 @@ YUI.add("HomeRowMenus", function(Y){
                 commands:{
                     open:{
                         command:"AudioLibrary.GetAlbums",
-                        properties:["title","tumbnail","fanart","albumid"]
+                        properties:["thumbnail","fanart"]
                     }
                 },
                 list:null,
-                subItems:{
-                    name:"Album",
-                    list:null,
-                    commands:{
-                        open:{
-                            command:"AudioLibrary.GetSongs",
-                            params:["albumid"],
-                            properties:["title","tumbnail","fanart","file","albumid"]
-                        }
-                    },
-                    subItems:{
-                        name:"song",
-                        list:null,
-                        inherit:["albumid"],
-                        commands:{
-                            queueAndPlay:{
-                                command:"AudioPlaylist.Play",
-                                params:["songid"]
-                            },
-                            queue:{
-                                command:"AudioPlaylist.Add",
-                                params:["file"]
-                            },
-                            clearQueue:{
-                                command:"AudioPlaylist.Clear"
-                            }
-                        }
-                    }
-                }
+                subItems:Y.clone(Album)
             },
             {
                 name:"Video Fliles",

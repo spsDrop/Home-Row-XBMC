@@ -16,7 +16,8 @@ YUI().use("json","io","transition", "node", "substitute", "history", "array-extr
             crumbTemplate = breadCrumbs.one(".home").removeClass("home"),
             menuTemplate = root.one(".templates .menu-wrap").cloneNode(true),
             currentMenu,
-            historyManager = new Y.HistoryHash();
+            historyManager = new Y.HistoryHash(),
+            isMobile = !!Y.UA.ipod || !!Y.UA.ipad || !!Y.UA.iphone || !!Y.UA.android || !!Y.UA.mobile;
 
         var baseJSON = {
                 jsonrpc: "2.0",
@@ -260,8 +261,11 @@ YUI().use("json","io","transition", "node", "substitute", "history", "array-extr
         
         var submit = function(e){
             var doOpenMenu = Y.Object.size(selectedSubNode.commands) > 1;
-            doOpenMenu = doOpenMenu ? !e.shiftKey : doOpenMenu;
-            doOpenMenu = doOpenMenu ? !(e.type === "contextmenu") : doOpenMenu;
+            if(doOpenMenu){
+                doOpenMenu = doOpenMenu ? !e.shiftKey : doOpenMenu;
+                doOpenMenu = doOpenMenu ? !(e.type === "contextmenu") : doOpenMenu;
+                doOpenMenu = isMobile ? doOpenMenu : !doOpenMenu;
+            }
 
             e.preventDefault();
 
@@ -358,7 +362,8 @@ YUI().use("json","io","transition", "node", "substitute", "history", "array-extr
             if(!currentMenu){
                 if( e.keyCode == 85 && e.shiftKey && e.ctrlKey ){
                     getSimpleRPC("VideoLibrary.Scan",{});
-                }else if( e.keyCode == 67 && e.shiftKey && e.ctrlKey ){
+                }else if( e.keyCode == 67 && e.altKey && e.ctrlKey ){
+                    alert("clean");
                     getSimpleRPC("VideoLibrary.Clean",{});
                 }else if(
                     e.keyCode == 81 &&

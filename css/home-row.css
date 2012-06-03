@@ -244,6 +244,10 @@ overflow-y:auto;
 	list-style: none;
 	cursor: pointer;
 }
+.results LI.album, .results LI.song
+{
+	height: 232px;
+}
 .results LI.hide
 {
 	display: none;
@@ -259,12 +263,21 @@ overflow-y:auto;
 	overflow: hidden;
 	text-align: center;
 }
+.results LI.album .thumb, .results LI.song .thumb
+{
+	height: 197px;
+}
 .results LI .thumb.no-image
 {
 	padding-top: 125px;
 	height: 143px;
 	color: rgb(50, 50, 50);
 	background: rgb(200, 200, 200);
+}
+.results LI.album .thumb.no-image, .results LI.song .thumb.no-image
+{
+	height: 106px;
+	padding-top: 85px;
 }
 .results LI .thumb.no-image IMG
 {
@@ -277,6 +290,11 @@ overflow-y:auto;
 .results LI.episode .thumb IMG
 {
 	margin-left: -50%;
+}
+.results LI.album .thumb IMG, .results LI.song .thumb IMG
+{
+	height: auto;
+	width: 100% !important;
 }
 .results LI .title
 {
@@ -350,7 +368,7 @@ overflow-y:auto;
 UL.menu-options LI, UL.menu-options:hover LI.selected
 {
 	list-style: none;
-	padding: 20px 70px 20px 20px;
+	padding: 20px 0 20px 20px;
 	background: rgba(0, 0, 0, 0.85);
 	color: #DDD;
 	font-size: 14px;
