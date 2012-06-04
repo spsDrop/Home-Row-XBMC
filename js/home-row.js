@@ -220,8 +220,11 @@ YUI().use("json","io","transition", "node", "substitute", "history", "array-extr
             jsonObj.method = method;
 
             Y.io("/jsonrpc",{
-                method:"POST",
                 data:Y.JSON.stringify(jsonObj),
+                method:"POST",
+                headers:{
+                    'Content-Type': 'application/json;'
+                },
                 on:{success:function(id,res){
                     cb(
                         Y.JSON.parse(
@@ -248,6 +251,9 @@ YUI().use("json","io","transition", "node", "substitute", "history", "array-extr
             Y.io("/jsonrpc",{
                 data:Y.JSON.stringify(data),
                 method:"POST",
+                headers:{
+                    'Content-Type': 'application/json;'
+                },
                 on:{success:function(id, res){
                     cb(
                         Y.JSON.parse(
