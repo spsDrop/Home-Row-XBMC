@@ -34,6 +34,8 @@ BODY
 IMG:not([src])
 {
 	display: none;
+	padding: 0;
+	margin: 0;
 }
 .hide, .templates
 {
@@ -65,20 +67,30 @@ IMG:not([src])
 .media P
 {
 	padding-bottom: 5px;
+	max-width: 240px;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+.media P.label
+{
+	font-weight: bold;
 }
 P.icon
 {
-	width: 45px;
-	height: 58px;
+	height: 66px;
 	border: 1px solid #808080;
 	overflow: hidden;
-	margin-right: 15px;
+	margin-right: 5px;
 	vertical-align: top;
 	background: rgb(200, 200, 200);
+	font-size: 0;
+	line-height: 0;
+	padding: 0;
 }
-IMG.icon
+.media P.icon IMG.icon
 {
-	width: 100%;
+	height: 100%;
 }
 .info
 {
@@ -116,7 +128,7 @@ IMG.icon
 	padding: 6px 10px;
 	margin: 0px 5px 0px 0px;
 	font-size: 12px;
-	background: rgb(255, 255, 255);
+	background: #FFFFFF url(images/home-row-sprite-min.png) no-repeat center 23px;
 	border: 1px solid #808080;
 	border-radius: 8px;
 	cursor: pointer;
@@ -124,11 +136,91 @@ IMG.icon
 	color: rgb(25, 25, 25);
 	box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.7);
 	vertical-align: top;
+	height: 14px;
 }
 .button:hover, .button:active, .button:focus
 {
-	background: rgb(25, 25, 25);
+	background-color: rgba(25, 25, 25, 0.75);
 	color: #FFFFFF;
+}
+.play-controls .button
+{
+	min-width: 14px;
+	line-height: 200px;
+}
+.shuffle.button
+{
+	background-position: 50% -234px;
+}
+.shuffle.button:hover
+{
+	background-position: 50% -494px;
+}
+.skip-forward.button
+{
+	background-position: 56% -208px;
+	min-width: 38px;
+}
+.skip-forward.button:hover
+{
+	background-position: 56% -468px;
+}
+.skip-forward-short.button
+{
+	background-position: 36% -130px;
+}
+.skip-forward-short.button:hover
+{
+	background-position: 36% -390px;
+}
+.skip-back-short.button
+{
+	background-position: 68% -156px;
+}
+.skip-back-short.button:hover
+{
+	background-position: 68% -416px;
+}
+.skip-back.button
+{
+	background-position: 45% -182px;
+	min-width: 38px;
+}
+.skip-back.button:hover
+{
+	background-position: 45% -442px;
+}
+.next.button
+{
+	background-position: 50% -52px;
+}
+.next.button:hover
+{
+	background-position: 50% -312px;
+}
+.stop.button
+{
+	background-position: 50% -104px;
+}
+.stop.button:hover
+{
+	background-position: 50% -364px;
+}
+.play-pause.button
+{
+	background-position: 50% 0px;
+}
+.play-pause.button:hover
+{
+	background-position: 50% -260px;
+}
+.previous.button
+{
+	background-position: 50% -78px;
+}
+.previous.button:hover
+{
+	background-position: 50% -338px;
 }
 .status.button:hover
 {
@@ -263,16 +355,43 @@ overflow-y:auto;
 	overflow: hidden;
 	text-align: center;
 }
+.results .thumb.no-image
+{
+	background: rgba(255, 255, 255, 0.45) url(images/clean-icons/file-icon.png) no-repeat center;
+	height: 250px;
+	display: block;
+}
+.home.results .playlist .thumb
+{
+	background-image: url(images/clean-icons/document-icon.png);
+}
+.home.results .movies .thumb, .home.results .television .thumb, .home.results .recent .thumb, .television.results .tv.show .thumb.no-image, .tv-show.results .season .thumb.no-image
+{
+	background-image: url(images/clean-icons/movie-folder-icon.png);
+}
+.home.results .artists .thumb, .home.results .albums .thumb, .albums.results .thumb.no-image, .artists.results .thumb.no-image
+{
+	background-image: url(images/clean-icons/music-folder-icon.png);
+}
+.home.results .video.fliles .thumb.no-image
+{
+	background-image: url(images/clean-icons/movie-folder-icon.png);
+}
+.home.results .music.fliles .thumb
+{
+	background-image: url(images/clean-icons/music-folder-icon.png);
+}
+.album.results .thumb.no-image, .music-fliles.results .thumb
+{
+	background-image: url(images/clean-icons/music-file-icon.png);
+}
+.recent-episodes.results .episode .thumb.no-image, .season.results .thumb.no-image, .video-fliles.results .thumb.no-image
+{
+	background-image: url(images/clean-icons/movie-file-icon.png);
+}
 .results LI.album .thumb, .results LI.song .thumb
 {
 	height: 197px;
-}
-.results LI .thumb.no-image
-{
-	padding-top: 125px;
-	height: 143px;
-	color: rgb(50, 50, 50);
-	background: rgb(200, 200, 200);
 }
 .results LI.album .thumb.no-image, .results LI.song .thumb.no-image
 {
@@ -303,6 +422,9 @@ overflow-y:auto;
 	height: 30px;
 	width: 100%;
 	overflow: hidden;
+	text-transform: uppercase;
+	font-weight: bold;
+	font-family: Helvetica, Verdana, sans-serif;
 }
 .menu-wrap.overlay
 {
@@ -380,4 +502,8 @@ UL.menu-options LI.selected, UL.menu-options LI:hover, UL.menu-options:hover LI.
 {
 	color: #333;
 	background: rgba(255, 255, 255, 0.85);
+}
+.shuffle.button.shuffled
+{
+	opacity: .65;
 }

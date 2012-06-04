@@ -42,7 +42,7 @@ YUI.add("HomeRowMenus", function(Y){
         commands:{
             open:{
                 command:"AudioLibrary.GetSongs",
-                properties:["thumbnail","fanart"],
+                properties:["thumbnail","fanart",'track'],
                 params:[
                     "albumid",
                     {
@@ -64,20 +64,19 @@ YUI.add("HomeRowMenus", function(Y){
                 queue:true,
                 batchGatherCommand:{
                     hideMenu:true,
-                    command:"VideoLibrary.GetEpisodes",
+                    command:"AudioLibrary.GetSongs",
                     params:[
-                        "tvshowid",
+                        "albumid",
                         {
                             name:"sort",
                             value:{
                                 order:"ascending",
-                                method:"episode"
+                                method:"track"
                             }
                         }
                     ],
-                    properties:["episode","season"],
                     results:function(res){
-                        return res.result.episodes;
+                        return res.result.songs;
                     }
                 },
                 batchCommand:{
@@ -91,7 +90,19 @@ YUI.add("HomeRowMenus", function(Y){
                         {
                             name:"item",
                             fn:function(item){
-                                return {episodeid: item.episodeid};
+                                return {songid: item.songid};
+                            }
+                        }
+                    ]
+                },
+                batchCompleteCommand:{
+                    hideMenu:true,
+                    command:"Player.Open",
+                    params:[
+                        {
+                            name:"item",
+                            fn:function(item){
+                                return {playlistid:1, position: item.idx};
                             }
                         }
                     ]
@@ -264,7 +275,7 @@ YUI.add("HomeRowMenus", function(Y){
                 commands:{
                     open:{
                         command:"VideoLibrary.GetTVShows",
-                        properties:["title","file","thumbnail"]
+                        properties:["title","file","thumbnail","fanart"]
                     }
                 },
                 list:null,
@@ -274,7 +285,7 @@ YUI.add("HomeRowMenus", function(Y){
                         open:{
                             command:"VideoLibrary.GetSeasons",
                             params:["tvshowid"],
-                            properties:["thumbnail","season"]
+                            properties:["thumbnail","season", "fanart"]
                         },
                         queueAndPlay:{title:"Queue And Play"},
                         queue:true,

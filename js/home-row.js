@@ -1,5 +1,5 @@
-YUI().use("json","io","transition", "node", "substitute", "history", "array-extras", "HomeRowMenus", function(Y){
-    var TypeXBMC = function(el){
+YUI().use("json","io","transition", "node", "substitute", "history", "array-extras", "HomeRowMenus", "datatype-date", function(Y){
+    var HomeRowXBMC = function(el){
         var root = el,
             searchBar = root.one(".search-bar"),
             form = root.one(".search-form"),
@@ -12,37 +12,34 @@ YUI().use("json","io","transition", "node", "substitute", "history", "array-extr
             media = root.one(".media"),
             status = root.one(".status"),
             tools = root.one(".tools"),
+            shuffleTool = tools.one(".shuffle"),
             breadCrumbs = root.one(".bread-crumbs"),
             crumbTemplate = breadCrumbs.one(".home").removeClass("home"),
             menuTemplate = root.one(".templates .menu-wrap").cloneNode(true),
             currentMenu,
             historyManager = new Y.HistoryHash(),
-            isMobile = !!Y.UA.ipod || !!Y.UA.ipad || !!Y.UA.iphone || !!Y.UA.android || !!Y.UA.mobile;
+            isMobile = !!Y.UA.ipod || !!Y.UA.ipad || !!Y.UA.iphone || !!Y.UA.android || !!Y.UA.mobile,
+            shuffled = false,
+            playerid = 1;
 
         var baseJSON = {
                 jsonrpc: "2.0",
                 method: "",
-                "id": 1,
-                sort: "ascending"
+                "id": 1
             },
 
             buttonMapping = {
-                "previous":{postfix:".GoPrevious",msg:"Skip Previous"},
-                "skip-back":{postfix:".Seek", params:{value:"bigbackward"},msg:"Skip Back Big"},
-                "skip-back-short":{postfix:".Seek", params:{value:"smallbackward"},msg:"Skip Back Small"},
-                "play-pause":{postfix:".PlayPause",msg:"Play Pause"},
-                "stop":{postfix:".Stop",msg:"Stop"},
+                "previous":{postfix:"GoPrevious",msg:"Skip Previous"},
+                "skip-back":{postfix:"Seek", params:{value:"bigbackward"},msg:"Skip Back Big"},
+                "skip-back-short":{postfix:"Seek", params:{value:"smallbackward"},msg:"Skip Back Small"},
+                "play-pause":{postfix:"PlayPause",msg:"Play Pause"},
+                "stop":{postfix:"Stop",msg:"Stop"},
                 "skip-forward-short":{postfix:".Seek", params:{value:"smallforward"},msg:"Skip Forward Small"},
-                "skip-forward":{postfix:".Seek", params:{value:"bigforward"},msg:"Skip Forward Big"},
-                "next":{postfix:".GoNext",msg:"Skip Next"}
-            },
-
-
-            types = {
-                movies:"Movies",
-                tv:"Television",
-                music:"Music",
-                pictures:"Pictures"
+                "skip-forward":{postfix:"Seek", params:{value:"bigforward"},msg:"Skip Forward Big"},
+                "next":{postfix:"GoNext",msg:"Skip Next"},
+                "shuffle":{msg:"Toggling Shuffle",postfix:{toString:function(){
+                    return shuffled ? "UnShuffle" : "Shuffle";
+                }}}
             },
 
             defaultValue = input.get("value"),
@@ -50,8 +47,7 @@ YUI().use("json","io","transition", "node", "substitute", "history", "array-extr
             nodes = [],
             currentNode,
             selectableSubNodes = [],
-            selectedSubNode,
-            playerID;
+            selectedSubNode;
 
 
         
@@ -115,71 +111,112 @@ YUI().use("json","io","transition", "node", "substitute", "history", "array-extr
                 mapping = buttonMapping[buttonClass];
                 params = mapping.params || {};
 
+            params.playerid = playerid;
+
             bark(mapping.msg);
 
-            params.playerid = playerID;
-
-            getSimpleRPC("Player"+mapping.postfix,{params:params},function(){
+            getSimpleRPC("Player."+mapping.postfix.toString(),{params:params},function(){
                 bark(mapping.msg+" Complete");
             });
         };
         
         var checkMedia = function(){
-            getSimpleRPC("Player.GetActivePlayers",{},function(results){
-                if(!results.length){
-                    statusBar.hide(1);
+
+            getSimpleRPC("Player.GetActivePlayers", {}, function(rslt){
+                if(!rslt[0]){
+                    statusBar.hide(0);
                 }else{
-                    playerID = results[0].playerid;
-                    statusBar.show(1);
-                    getSimpleRPC("XBMC.GetInfoLabels",{
-                        params:{
-                            labels:[
-                                "Player.Time",
-                                "Player.Duration",
-                                "Player.FinishTime",
-                                "VideoPlayer.Title",
-                                "VideoPlayer.TVShowTitle",
-                                "MusicPlayer.Title",
-                                "ListItem.Icon",
-                                "VideoPlayer.Cover",
-                                "MusicPlayer.Cover",
-                                "ListItem.Thumb"
-                            ]
-                        }
-                    },function(rslt){
-                        var imgURL = rslt["ListItem.Icon"] ||
-                                     rslt["ListItem.Thumb"] ||
-                                     rslt["MusicPlayer.Cover"] ||
-                                     rslt["VideoPlayer.Cover"] ||
-                                     null,
-                            icon = media.one("p.icon");
-                                 
-                        if(imgURL){
-                            icon.show(1);
-                            icon.one("img").set("src",imgURL || null);
-                        }else{
-                            icon.hide(1);
-                        }
-                        
-                        media.one(".label").set("text",
-                            rslt["VideoPlayer.Title"] ? rslt["VideoPlayer.Title"] : rslt["MusicPlayer.Title"]
-                        );
-                    
-                        media.one(".progress").set("text", rslt["Player.Time"]);
-                        media.one(".duration").set("text", rslt["Player.Duration"]);
-                        media.one(".finish-time").set("text", rslt["Player.FinishTime"]);
-                    });
+                    playerid = rslt[0].playerid;
+                    getPlayerItem();
+                    getPlayerProperties();
+                    if(statusBar.getStyle("display") == "none"){
+                        statusBar.show(1);
+                    }
                 }
             });
+
             setTimeout(checkMedia, 3000);
+
+            function getPlayerItem(){
+                getSimpleRPC("Player.GetItem",{
+                        params:{
+                            playerid:playerid,
+                            properties:["thumbnail"]
+                        }
+                    },
+                    function(rslt){
+                        if(rslt){
+
+                            var imgURL = rslt.item.thumbnail || null,
+                                icon = media.one("p.icon");
+
+                            if(imgURL){
+                                icon.show(1);
+                                icon.one("img").set("src", fixVFSImageURL(imgURL));
+                            }else{
+                                icon.hide(1);
+                            }
+
+                            media.one(".label").set("text",
+                                rslt.item.label
+                            );
+                        }
+                    }
+                );
+            }
+
+            function getPlayerProperties(){
+                getSimpleRPC("Player.GetProperties",{
+                        params:{
+                            playerid:playerid,
+                            properties:["percentage", "type", "repeat", "shuffled", "time", "totaltime", "playlistid", "position"]
+                        }
+                    },
+                    function(rslt){
+
+                        shuffled = rslt.shuffled;
+                        shuffleTool.toggleClass("shuffled", shuffled);
+
+                        media.one(".progress").set("text", getDisplayTime(rslt.time));
+                        media.one(".duration").set("text", getDisplayTime(rslt.totaltime));
+
+                        var time = new Date().getTime();
+                        time += (rslt.totaltime.hours - rslt.time.hours) * 60 * 60 * 1000;
+                        time += (rslt.totaltime.minutes - rslt.time.minutes) * 60 * 1000;
+                        time += (rslt.totaltime.seconds - rslt.time.seconds) * 1000;
+                        media.one(".finish-time").set(
+                            "text",
+                            Y.DataType.Date.format(
+                                new Date(time),
+                                {
+                                    format:"%I:%M %p"}
+                            )
+                        );
+                    }
+                );
+            }
+
+            function getDisplayTime(time){
+                var display = "";
+
+                display += getDisplayUnit(time.hours);
+                display += getDisplayUnit(time.minutes);
+                display += getDisplayUnit(time.seconds);
+
+                return display.replace(/\:$/,"");
+
+                function getDisplayUnit(unit){
+                    return unit ? (unit < 10 ? "0"+unit+":" : unit+":") : "";
+                }
+            }
         };
-        
+
         var getSimpleRPC = function(method, obj, cb){
             var jsonObj = Y.clone(baseJSON);
 
             cb = cb || function(){};
 
-            Y.aggregate(jsonObj, obj, true);
+            Y.aggregate(jsonObj, obj || {}, true);
             jsonObj.method = method;
 
             Y.io("/jsonrpc",{
@@ -313,7 +350,8 @@ YUI().use("json","io","transition", "node", "substitute", "history", "array-extr
                     case 'queue':
                         queueAndPlay(selectedSubNode);
                         break;
-                    case 'remove' || 'clear':
+                    case 'remove':
+                    case'clear':
                         updateRefresh(selectedSubNode, selectedSubNode.commands[command]);
                         break;
                     default:
@@ -325,11 +363,11 @@ YUI().use("json","io","transition", "node", "substitute", "history", "array-extr
 
             function runDefault(){
                 if(selectedSubNode.commands.getDirectory){
-                    if(selectedSubNode.file.match(/[^\/]+$/)){
-                        play(selectedSubNode);
-                    }else{
+                    if( selectedSubNode.file.match(/[\\\/]$/) ){
                         selectedSubNode.commands.open = selectedSubNode.commands.getDirectory;
                         open(selectedSubNode);
+                    }else{
+                        play(selectedSubNode);
                     }
                 }else if(selectedSubNode.commands.open){
                     open(selectedSubNode);
@@ -536,7 +574,11 @@ YUI().use("json","io","transition", "node", "substitute", "history", "array-extr
                     method:"POST",
                     on:{success:function(id, res){
                         if(play){
-                            getSimpleRPC("Player.Open", {params:{item:{playlistid:1}}});
+                            if(node.commands.batchCompleteCommand){
+                                getLayeredRPCCall(node, node.commands.batchCompleteCommand);
+                            }else{
+                                getSimpleRPC("Player.Open", {params:{item:{playlistid:1}}});
+                            }
                         }
                     }}
                 });
@@ -621,14 +663,19 @@ YUI().use("json","io","transition", "node", "substitute", "history", "array-extr
                     });
                     Y.Array.each(newList,function(newItem){
                         Y.each(newItem,function(value,param){
-                            if(Y.Lang.isString(value) && value.match("special://")){
-                                newItem[param] = "/vfs/"+value;
-                            }
+                            newItem[param] = fixVFSImageURL(value);
                         });
                     });
                     cb(newList);
                 }}
             });
+        };
+
+        var fixVFSImageURL = function(url){
+            if(Y.Lang.isString(url) && url.match("special://")){
+                url = "/vfs/"+url;
+            }
+            return url;
         };
         
         var renderItems = function(list){
@@ -651,7 +698,6 @@ YUI().use("json","io","transition", "node", "substitute", "history", "array-extr
                 img.set("src",item.thumbnail || null);
             }else{
                 thumb.addClass("no-image");
-                thumb.set("text","No image");
             }
             title.set("text",item.title || item.label || "Unknown");
             li.on("click", selectAndSubmit);
@@ -791,6 +837,6 @@ YUI().use("json","io","transition", "node", "substitute", "history", "array-extr
     };
     
     Y.on("domready",function(){
-        typeXBMC = new TypeXBMC(Y.one(".type-xbmc"));
+        homeRowXBMC = new HomeRowXBMC(Y.one(".home-row-xbmc"));
     });
 });
