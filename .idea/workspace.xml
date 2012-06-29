@@ -1,7 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="a89edd21-a417-4862-a0fe-da3c8f1ca943" name="Default" comment="" />
+    <list default="true" id="a89edd21-a417-4862-a0fe-da3c8f1ca943" name="Default" comment="">
+      <change type="DELETED" beforePath="Z:\Projects\home-row-eden\webinterface.homerow\css\images\clean-icons\Folder-2-icon.png" afterPath="" />
+      <change type="DELETED" beforePath="Z:\Projects\home-row-eden\webinterface.homerow\css\images\clean-icons\My-Music-icon.png" afterPath="" />
+      <change type="DELETED" beforePath="Z:\Projects\home-row-eden\webinterface.homerow\css\images\clean-icons\My-Videos-icon.png" afterPath="" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/addon.xml" afterPath="$PROJECT_DIR$/addon.xml" />
+    </list>
     <ignored path="webinterface.homerow.iws" />
     <ignored path=".idea/workspace.xml" />
     <ignored path=".idea/" />
@@ -23,10 +28,19 @@
   </component>
   <component name="FileEditorManager">
     <leaf>
-      <file leaf-file-name="home-row.js" pinned="false" current="true" current-in-tab="true">
+      <file leaf-file-name="home-row.js" pinned="false" current="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/js/home-row.js">
           <provider selected="true" editor-type-id="text-editor">
-            <state line="177" column="19" selection-start="6194" selection-end="6194" vertical-scroll-proportion="0.68815595">
+            <state line="177" column="19" selection-start="6194" selection-end="6194" vertical-scroll-proportion="-18.36">
+              <folding />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="addon.xml" pinned="false" current="true" current-in-tab="true">
+        <entry file="file://$PROJECT_DIR$/addon.xml">
+          <provider selected="true" editor-type-id="text-editor">
+            <state line="3" column="16" selection-start="91" selection-end="91" vertical-scroll-proportion="0.07511046">
               <folding />
             </state>
           </provider>
@@ -80,11 +94,11 @@
   <component name="IdeDocumentHistory">
     <option name="changedFiles">
       <list>
-        <option value="$PROJECT_DIR$/addon.xml" />
         <option value="$PROJECT_DIR$/index.html" />
         <option value="$PROJECT_DIR$/js/menu-structure.js" />
         <option value="$PROJECT_DIR$/css/home-row.css" />
         <option value="$PROJECT_DIR$/js/home-row.js" />
+        <option value="$PROJECT_DIR$/addon.xml" />
       </list>
     </option>
   </component>
@@ -347,7 +361,7 @@
   </component>
   <component name="ToolWindowManager">
     <frame x="1912" y="-8" width="1936" height="1216" extended-state="6" />
-    <editor active="false" />
+    <editor active="true" />
     <layout>
       <window_info id="File Transfer" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.32905984" sideWeight="0.49786553" order="7" side_tool="false" content_ui="tabs" />
       <window_info id="Data Sources" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
@@ -360,7 +374,7 @@
       <window_info id="Messages" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
       <window_info id="TODO" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.32905984" sideWeight="0.49786553" order="6" side_tool="false" content_ui="tabs" />
       <window_info id="Structure" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.25" sideWeight="0.5" order="1" side_tool="true" content_ui="tabs" />
-      <window_info id="Project" active="true" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" weight="0.17182498" sideWeight="0.67897725" order="0" side_tool="false" content_ui="combo" />
+      <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" weight="0.17182498" sideWeight="0.67897725" order="0" side_tool="false" content_ui="combo" />
       <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="2" side_tool="false" content_ui="tabs" />
       <window_info id="Cvs" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.25" sideWeight="0.5" order="4" side_tool="false" content_ui="tabs" />
       <window_info id="Message" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
@@ -433,11 +447,6 @@
     <breakpoint-manager />
   </component>
   <component name="editorHistoryManager">
-    <entry file="file://$PROJECT_DIR$/addon.xml">
-      <provider selected="true" editor-type-id="text-editor">
-        <state line="8" column="19" selection-start="215" selection-end="215" vertical-scroll-proportion="0.0" />
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/index.html">
       <provider selected="true" editor-type-id="text-editor">
         <state line="41" column="45" selection-start="1783" selection-end="1783" vertical-scroll-proportion="0.0" />
@@ -459,7 +468,14 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/js/home-row.js">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="177" column="19" selection-start="6194" selection-end="6194" vertical-scroll-proportion="0.68815595">
+        <state line="177" column="19" selection-start="6194" selection-end="6194" vertical-scroll-proportion="-18.36">
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/addon.xml">
+      <provider selected="true" editor-type-id="text-editor">
+        <state line="3" column="16" selection-start="91" selection-end="91" vertical-scroll-proportion="0.07511046">
           <folding />
         </state>
       </provider>
