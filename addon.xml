@@ -12,7 +12,7 @@
     point="xbmc.gui.webinterface"/>
   <extension point="xbmc.addon.metadata">
     <summary lang="en">Home Row - Fast keystroke/touch based web interface for XBMC</summary>
-    <description lang="en">Home Row focuses on speed by using a quick refine text field. It is also very mouse, touch and mobile friendly. It should work with any modern browser that supports JS.</description>
+    <description lang="en">Home Row focuses on speed by using a quick refine text field. It is very mouse, touch and mobile friendly. It has queueing and playlist support. It should work with any modern browser that supports JS.</description>
     <platform>all</platform>
     <language>en</language>
   </extension>
