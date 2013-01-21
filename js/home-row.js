@@ -602,6 +602,9 @@ YUI().use("json","io","transition", "node", "substitute", "history", "array-extr
                 Y.io("/jsonrpc",{
                     data:Y.JSON.stringify(data),
                     method:"POST",
+                    headers:{
+                        'Content-Type': 'application/json;'
+                    },
                     on:{success:function(id, res){
                         if(play){
                             if(node.commands.batchCompleteCommand){
@@ -622,6 +625,9 @@ YUI().use("json","io","transition", "node", "substitute", "history", "array-extr
 
             Y.io("/jsonrpc",{
                 data:Y.JSON.stringify(jsonObj),
+                headers:{
+                    'Content-Type': 'application/json;'
+                },
                 method:"POST",
                 on:{success:function(){
                     cb();
@@ -676,8 +682,13 @@ YUI().use("json","io","transition", "node", "substitute", "history", "array-extr
         };
 
         var fixVFSImageURL = function(url){
-            if(Y.Lang.isString(url) && url.match("special://")){
-                url = "/vfs/"+url;
+            if(Y.Lang.isString(url)){
+                if(url.match("special://")){
+                    url = "/vfs/"+url.replace("special://", "");
+                }
+                if(url.match("image://")){
+                    url = "/image/"+url.replace("image://", "").replace(/\/$/,"");
+                }
             }
             return url;
         };

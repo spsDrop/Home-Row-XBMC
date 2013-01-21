@@ -77,9 +77,13 @@ YUI.add("HomeRowMenus", function(Y){
         commands:{
             open:{
                 command:"AudioLibrary.GetSongs",
-                properties:["thumbnail","fanart",'track'],
                 params:[
-                    "albumid",
+                    {
+                        name:"filter",
+                        fn:function(item){
+                            return {albumid: item.albumid};
+                        }
+                    },
                     {
                         name:"sort",
                         value:{
@@ -101,7 +105,12 @@ YUI.add("HomeRowMenus", function(Y){
                     hideMenu:true,
                     command:"AudioLibrary.GetSongs",
                     params:[
-                        "albumid",
+                        {
+                            name:"filter",
+                            fn:function(item){
+                                return {albumid: item.albumid};
+                            }
+                        },
                         {
                             name:"sort",
                             value:{
@@ -374,7 +383,14 @@ YUI.add("HomeRowMenus", function(Y){
                     commands:{
                         open:{
                             command:"AudioLibrary.GetAlbums",
-                            params:["artistid"],
+                            params:[
+                                {
+                                    name:"filter",
+                                    fn:function(item){
+                                        return {artistid: item.artistid};
+                                    }
+                                }
+                            ],
                             properties:["thumbnail","fanart"]
                         }
                     },
