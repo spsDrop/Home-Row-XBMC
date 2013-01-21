@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <addon
   id="webinterface.home-row"
-  version="1.5.6"
+  version="1.5.9"
   name="Home Row"
   provider-name="Soljin">
   <requires>
