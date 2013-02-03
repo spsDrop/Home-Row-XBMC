@@ -5,8 +5,8 @@
   name="Home Row"
   provider-name="Soljin">
   <requires>
-    <import addon="xbmc.gui" version="3.00"/>
-    <import addon="xbmc.json" version="6.00" />
+    <import addon="xbmc.gui" version="4.0.0"/>
+    <import addon="xbmc.json" version="6.0.0" />
   </requires>
   <extension
     point="xbmc.gui.webinterface"/>
