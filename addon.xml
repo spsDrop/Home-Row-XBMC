@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <addon
   id="webinterface.home-row"
-  version="1.5.9"
+  version="1.6.0"
   name="Home Row"
   provider-name="Soljin">
   <requires>
     <import addon="xbmc.gui" version="3.00"/>
-    <import addon="xbmc.json" version="4.00" />
+    <import addon="xbmc.json" version="6.00" />
   </requires>
   <extension
     point="xbmc.gui.webinterface"/>
